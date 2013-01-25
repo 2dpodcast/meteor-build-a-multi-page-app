@@ -1,0 +1,182 @@
+Hi everyone. In this screencast we'll build a multi-page application using
+client side routing. If you're completely new to the idea of routing, let me
+know in the comments and I'll do another more introductory video.
+
+I had planned to release this video a few days ago, but realized I was missing
+some important functionality that I needed, so I built a package called
+mini-pages that we'll be using. It's based heavily on Tom's Meteor Router
+project so you should check that out too and let us know if you have some good
+ideas! There's quite a bit here, so we'll cover the basics and then you can look
+at the Github project for more details. Okay let's get into it.
+
+Let's start by creating a new application called pages using mrt.
+
+Next I'll change into the pages directory and remove the autopublish package so
+Meteor doesn't automatically publish all collections.
+
+Then I'll add the mini-pages package for client-side routing and the bootstrap
+package for a nice prepackaged set of styles, and less so I can have more sane
+stylesheet files. Then I'll start the server since Meteor will automatically
+update our server when files change. This way we can quickly switch to the
+browser and see our progress.
+
+Over in my editor, the first thing I'm going to do is change my stylesheet
+extension to less so it gets compiled by the less compiler. Then I'll paste in
+some styles I've created for the project. I'm not going to cover them here, but
+you can look at them in more detail on Github.
+
+Okay, now let's jump over to my html file. I'm going to get us started with some
+boilerplate html so we can jump to the good stuff. But let me give you a quick
+tour. Notice I have nothing in the body tag. That's because mini-pages is going
+to manage that for me. Then I have three templates. The first template is the
+default layout for all the other templates. We'll see how this works in a
+second. But the key thing to notice for now is the "yield" expression.
+Whichever child template is being rendered will be rendered here. It uses three
+handlebar mustaches, if you will, to tell Handlebars not to escape the output
+since it will be html.
+
+Over in my javascript file I'm going to delete the standard stuff and paste in
+some more boilerplate code I've already written. At the top I have a collection
+named "posts" that will be created on the client and the server. Inside the
+server block I've written some startup code to prepopulate our posts collection.
+Then I publish the posts to the client. In the client block, first I subscribe
+to the posts publication. Then I add a "posts" helper to the postIndex template
+so I can iterate over all the posts in my template.
+
+Let's define our first pages. I can do this by calling the Meteor.pages method
+and passing an object of page definitions where the keys are the url routes and
+the value can be as simple as a string with the name of the template that should
+be rendered.
+
+Okay, over in the browser I can see the layout template is showing its own title
+and is responsible for the beige background color. And the child template is
+rendering the table of posts.
+
+In my page definition, I can also use an object as the value. This let's me
+provide some more options for the page. For example, the "to" property is the
+name of the template to render. The "as" property is what the page will be
+named. This is mostly used to create automatic path helpers which we'll look at
+in a second.  If you don't provide an "as" value, mini-pages will just use the
+name of the template. Do you notice that both of these pages use the same
+template, even though they have different urls? But they will each have
+different path helpers because I named the pages differently using the "as"
+option.
+
+Now let's create a new page to show a post. The special colon, underscore, id
+token tells mini-pages that this is a variable in the url which we can use a
+little later. If you're coming from a restful Web framework like Rails, this
+should be familiar to you. For the show page I want to render the postShow
+template, but first I'd like to set a post in Session that I can use inside the
+template. To do that, I can create a before filter called setPost that will get
+called before the template is rendered. Before filters take two parameters: a
+"context" and the "page" instance. Remember the special id token in my url?
+Well, the actual values will be stord in the context.params object. In this case
+I want to grab the id property that comes from the url. Then I'll set a reactive
+Session key with the value returned from calling findOne on the Posts
+collection.
+
+Now let's jump to our html file and create the postShow template. Using the
+'with' block expression will let me access the post properties without always
+having to reference it. I'll show the post's title and then create a link back
+to all the posts. Next, let's create a helper method on the postShow template to
+grab the current post from Session. Finally, we'll update our postRow template
+to show a link to the show page for this post. I'll hard code the underscore id
+property of the post into my url for now, and this url will map to my postShow
+page.
+
+Over in the browser, I can click on the Show link and I'm routed to the show
+page for that post. If I click the "back" link I'm taken back to the postIndex
+page.
+
+But I'd like to clean this up. I don't want to hard code these URLs all over my
+html files. What if they change? That could be a nightmare! Instead, I can use
+mini-pages path helpers which are automatically created for each page.  I'll
+replace the url with this Handlebars expression and it will automatically get
+the url for me. Let's go down to our postShow template and replace that url with
+a path helper too.
+
+Great, over in the browser it doesn't look like I broke anything! I can still
+click "show" and I can still click "Back to All."
+
+Next, let's look at how we can use dynamic layouts. So far, our templates have
+been using the template named "layout" as the default layout template. We can
+change that with the layout property in our page definition. But in this case
+I'd like to do something a little different. I want to use one layout for users
+who are not authenticated. And I want to use a different template for users who
+are authenticated. But for both templates I want to yield the same content. 
+
+I'll paste in some html but let's go through it. I've called the template
+"loggedInLayout." It's going to add a css class named "authorized" to the
+top-level div and this will change the background color. Then I've used some
+html structure and css classes from the Bootstrap library to show a navigation
+bar at the top. Finally, I'll yield my child template as we've done before. If
+these bootstrap concepts are confusing to you, don't worry. Just go check out
+the Bootstrap web site. I'll include it in my show notes.
+
+
+Okay, over in my JavaScript let's add some before filters to dynamically set the
+layout. You can see that I can provide multiple filters by just using an array.
+
+In the setLayout function I'll see if the user is authorized by calling the
+isAuthorized() method that we'll write in a moment. If the user is authorized I
+can call the withLayout method of the page to set the layout to
+"loggedInLayout".  Otherwise, we'll just use the default "layout" template.
+
+And for the isAuthorized function, we'll just fake it and check a Session
+variable.
+
+Over in the browser, we start off with the default layout. But in the console if
+I set the "loggedin" session key to true, you see the layout dynamically change!
+If I change it to false, you'll see the page update again. Amazing!
+
+Next, let's look at redirecting. I want to add a secret page link that only
+certain users can see. So I'll add the link to my top nav bar, and then create
+two templates. The first is the "secret" template. The second is a template
+we'll render for users who aren't authorized to see the secret.
+
+In our javascript, let's add the secret page. But we'll add a before filter
+called authorizeSecret. Then we'll create another route for unauthorized access.
+The authorizeSecret filter will redirect the user if Session.get("secret") isn't
+true. To do this we can call the redriect method of the context object, and pass
+in a path. And we can even use the same path helpers we used in Handlebars.
+They're also available off of the Meteor object. So Meteor.unauthorizedPath will
+return our 401 path.
+
+In the browser, if I click the secret nav link, I'm redirected to the 401 url.
+So let's set the Session "secret" value to true and click the link again.
+Great, now I'm seeing the "secret" page. But what's really cool is that before
+filters are reactive. So if the value of the Session "secret" is changed back to
+false, we'll be re-routed to our 401 page again!
+
+Notice how the Home navbar link is highlighted. But right now that's hard coded
+as a css rule in our html. What I really want is for that highlighting to be
+dependent on the page.
+
+To do that, over in my html instead of hard coding the "active" css class, I'm
+going to call a global Handlebars helper named "navClassFor" which takes one
+parameter: the name of the nav link. Then, in my javascript, I can specify which
+nav should be used for each page using the "nav" option like so. Then I'll
+create my Handlebars helper named navClassFor. In mini-pages, every time a page
+changes, it's nav value is set in a Session key called "nav." In our helper
+we'll just see if the nav parameter is the same as the one stored in Session. If
+it is, return "active" as the class. And if it's not just return an empty
+string. And of course, let's make sure we're actually passing the parameter.
+
+In the browser I can see the Home link highlighted. And if I click the "secret"
+link, it gets highlighted instead.
+
+Before we conclude, one last thing. It's a good idea to have a catch all page
+for urls that don't map to anything. We might call this a 404 or not-found page.
+We can do this by add a page at the end that uses the * token in the url to say:
+I'll handle anything that hasn't been handled already. And we'll tell this page
+to render the notFound template.
+
+I'll paste in some code for the notFound template, and then I'll create a bogus
+nav link to test it out.
+
+In the browser, when I click the link I'm taken to my notFound page.
+
+This was a pretty fast tour through client-side routing and the mini-pages
+package. But you can read more on the Github project page. I hope you'll have a
+lot of comments and pull requests! If you're new to this kind of stuff, but want
+to contribute, just leave a comment and we'll get you started with something!
