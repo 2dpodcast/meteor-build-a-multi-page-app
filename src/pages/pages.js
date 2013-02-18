@@ -27,16 +27,16 @@ if (Meteor.isClient) {
     return Session.get("loggedin");
   }
 
-  function setPost (context, page) {
+  function setPost (context) {
     var _id = context.params._id;
     Session.set("post", Posts.findOne(_id));
   }
 
-  function setLayout (context, page) {
+  function setLayout (context) {
     if (isAuthorized())
-      page.withLayout('loggedInLayout');
+      this.layout('loggedInLayout');
     else
-      page.withLayout('layout');
+        this.layout('layout');
   }
 
   function authorizeSecret (context, page) {
