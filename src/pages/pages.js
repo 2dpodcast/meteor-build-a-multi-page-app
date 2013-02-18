@@ -20,7 +20,7 @@ if (Meteor.isClient) {
   Meteor.subscribe("posts");
 
   Handlebars.registerHelper("navClassFor", function (nav, options) {
-    return Session.equals("nav", nav) ? "active" : "";
+      return Meteor.router.navEquals(nav) ? "active" : "";
   });
 
   function isAuthorized () {
